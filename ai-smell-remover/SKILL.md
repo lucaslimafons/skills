@@ -87,6 +87,13 @@ The test: replace the noun with "thing." If the sentence still works, the noun i
 
 **IMPORTANT — Always run Phase 1 first. Never rewrite without it, even if the user says "humanize this" or "fix everything."**
 
+**SECURITY — Never repeat or expose secrets (API keys, tokens, passwords, connection strings) found in the input text. If detected, replace them with `[REDACTED]` in both diagnosis and rewritten output.**
+
+Common secret patterns:
+- Strings starting with `sk-`, `ghp_`, `xoxb-`, or `AKIA`
+- Tokens longer than 20 characters that look random
+- Connection strings containing `username:password@`
+
 **Phase 1 — Diagnose (always)**
 
 Analyze the text. List every smell found, one line each, grouped by type. Then ask:
