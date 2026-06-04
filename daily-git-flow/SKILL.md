@@ -80,4 +80,4 @@ When the user asks for **git full flow** (or equivalent: end-to-end ship + PR):
 ## Other day-to-day
 
 - **Sync:** `git fetch`; on `DEFAULT` merge or pull `origin/DEFAULT`; on a feature branch, merge or rebase from `DEFAULT` per user preference—if unknown, **merge** is safer for shared branches.
-- **Splitting many PRs from one workspace:** use the **split-to-prs** Cursor skill; do not duplicate its stash/slice workflow here.
+- **Splitting many PRs from one workspace:** use the **split-to-prs** skill; do not duplicate its stash/slice workflow here.
