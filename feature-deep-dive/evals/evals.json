@@ -1,0 +1,50 @@
+{
+  "skill_name": "feature-deep-dive",
+  "evals": [
+    {
+      "id": 0,
+      "name": "recipe-collections",
+      "prompt": "Before I start building, I want to figure out how we should approach letting users organize their saved recipes into collections or folders. How are the top recipe and content apps handling this, and how should we do it in our app given what we already have?",
+      "expected_output": "A structured deep-dive: clarifies the specific slice, reads this project's stack/schema/tokens, researches how top recipe & content apps handle collections with cited sources, then recommends a concrete approach mapped onto real files with alternatives, tradeoffs, assumptions, and open questions. No implementation code.",
+      "files": [],
+      "assertions": [
+        {"id": "surfaces-clarifying-questions", "text": "Explicitly surfaces clarifying questions rather than silently assuming scope/intent."},
+        {"id": "lists-explicit-assumptions", "text": "States any assumptions it had to make explicitly."},
+        {"id": "cites-real-research-sources", "text": "Names specific apps and cites real sources for how top apps handle collections."},
+        {"id": "grounds-in-this-project", "text": "References real files/tables/components/conventions from this repo, not generic advice."},
+        {"id": "stays-analysis-not-code", "text": "Produces research/approach and does not write feature implementation code."},
+        {"id": "concrete-recommendation-with-tradeoffs", "text": "Gives a concrete recommended approach plus at least one alternative with tradeoffs."}
+      ]
+    },
+    {
+      "id": 1,
+      "name": "social-features-ambiguous",
+      "prompt": "I want to add social features to the app. Can you do a deep dive on how we should approach it?",
+      "expected_output": "Because the request is vague, the analysis should lead by narrowing scope and asking clarifying questions (what kind of social? following, comments, sharing?) before committing. It should still research patterns with sources, ground in the project, and explicitly flag assumptions and open decisions.",
+      "files": [],
+      "assertions": [
+        {"id": "surfaces-clarifying-questions", "text": "Leads by asking clarifying questions / narrowing the vague 'social features' scope before committing to a direction."},
+        {"id": "lists-explicit-assumptions", "text": "States any assumptions it had to make explicitly."},
+        {"id": "cites-real-research-sources", "text": "Names specific apps and cites real sources for social-feature patterns."},
+        {"id": "grounds-in-this-project", "text": "References real files/tables/components/conventions from this repo, not generic advice."},
+        {"id": "stays-analysis-not-code", "text": "Produces research/approach and does not write feature implementation code."},
+        {"id": "concrete-recommendation-with-tradeoffs", "text": "Gives a concrete recommended approach plus at least one alternative with tradeoffs."}
+      ]
+    },
+    {
+      "id": 2,
+      "name": "onboarding-ux",
+      "prompt": "Deep dive on first-time user onboarding — what do the top mobile apps (especially cooking/recipe ones) do for onboarding, and how should we approach it given our current auth and navigation setup?",
+      "expected_output": "Researches current onboarding patterns in top mobile/cooking apps with cited sources, reads the project's auth (Clerk) and routing/navigation setup, and recommends a concrete onboarding approach mapped to real routes/components with alternatives, tradeoffs, assumptions, and open questions.",
+      "files": [],
+      "assertions": [
+        {"id": "surfaces-clarifying-questions", "text": "Explicitly surfaces clarifying questions rather than silently assuming scope/intent."},
+        {"id": "lists-explicit-assumptions", "text": "States any assumptions it had to make explicitly."},
+        {"id": "cites-real-research-sources", "text": "Names specific apps and cites real sources for onboarding patterns."},
+        {"id": "grounds-in-this-project", "text": "References the project's actual auth (Clerk) and routing/navigation files and conventions."},
+        {"id": "stays-analysis-not-code", "text": "Produces research/approach and does not write feature implementation code."},
+        {"id": "concrete-recommendation-with-tradeoffs", "text": "Gives a concrete recommended approach plus at least one alternative with tradeoffs."}
+      ]
+    }
+  ]
+}
