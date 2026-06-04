@@ -7,7 +7,8 @@ description: >-
   push to main unless the user explicitly asks). Use when the user asks for
   daily git, morning sync, shipping a branch, opening a PR, or phrases like git
   full flow, full git flow, or branch commit push pr. For splitting one pile of
-  work into multiple PRs, use the split-to-prs skill instead.
+  work into multiple PRs, defer to a dedicated split-to-prs skill if one is
+  available.
 ---
 
 # Daily Git Flow (global)
@@ -80,4 +81,4 @@ When the user asks for **git full flow** (or equivalent: end-to-end ship + PR):
 ## Other day-to-day
 
 - **Sync:** `git fetch`; on `DEFAULT` merge or pull `origin/DEFAULT`; on a feature branch, merge or rebase from `DEFAULT` per user preference—if unknown, **merge** is safer for shared branches.
-- **Splitting many PRs from one workspace:** use the **split-to-prs** skill; do not duplicate its stash/slice workflow here.
+- **Splitting many PRs from one workspace:** if a dedicated **split-to-prs** skill is available, use it. Otherwise handle it one PR at a time—set aside unrelated changes (e.g. `git stash`), create a branch per logical PR, and run the full flow for each.
