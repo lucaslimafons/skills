@@ -167,7 +167,13 @@ const propAt = (s, name) => {
 
 const quizStart = src.search(/\bconst\s+QUIZ\s*=/);
 if (quizStart === -1) {
-  warn("no `const QUIZ` block found; skipping quiz checks (hand-rolled quiz?)");
+  /*
+    Not a style preference. The `const QUIZ` shape is what makes option lengths
+    readable from outside the document, so a hand-rolled quiz is an UNAUDITED
+    quiz: the length tells and the render-time shuffle both quietly stop
+    applying, and this file would otherwise report a clean pass.
+  */
+  fail("no `const QUIZ` block: a hand-rolled quiz cannot be audited for length tells and probably is not shuffled. Use the renderer from assets/page-template.html");
 } else {
   const quizSrc = src.slice(quizStart, src.indexOf("/* ---------- renderer", quizStart) + 1 || undefined);
   const stems = propAt(quizSrc, "stem");
@@ -197,10 +203,20 @@ if (quizStart === -1) {
     console.log(`  Q${qi + 1}  words=[${words.join(", ")}] spread=${ratio.toFixed(2)}x`);
 
     if (keys !== 1) { fail(`Q${qi + 1}: exactly one option must be correct, found ${keys}`); problems++; }
-    if (ratio > 1.3) { fail(`Q${qi + 1}: length spread ${ratio.toFixed(2)}x > 1.30x; shorten the answer, do not pad the distractors`); problems++; }
     const keyIdx = opts.findIndex((o) => o.correct);
+    if (ratio > 1.3) {
+      // The remedy depends on WHERE the spread comes from. Telling an author to
+      // "shorten the answer" is useless when the key sits mid-pack and the two
+      // extremes are both distractors.
+      const remedy = keyIdx > -1 && words[keyIdx] === hi
+        ? "shorten the answer, do not pad the distractors"
+        : `the answer is mid-pack (${words[keyIdx]} words), so level the distractors toward each other`;
+      fail(`Q${qi + 1}: length spread ${ratio.toFixed(2)}x > 1.30x; ${remedy}`); problems++;
+    }
+    // A uniquely-longest answer is THE tell this skill exists to prevent, so it
+    // fails rather than warns: a warning at exit 0 reads as "done".
     if (keyIdx > -1 && words[keyIdx] === hi && words.filter((w) => w === hi).length === 1) {
-      warn(`Q${qi + 1}: the answer is the only longest option`); problems++;
+      fail(`Q${qi + 1}: the answer is the only longest option (${hi} words); shorten it or bring a distractor level`); problems++;
     }
     for (const o of opts) {
       for (const b of BANNED) {
