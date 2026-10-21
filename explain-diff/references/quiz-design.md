@@ -35,9 +35,9 @@ authoring order, and it is different on every load. So:
   second choice". Name the content instead, in stems and in feedback. A letter
   reference becomes wrong the moment the page loads.
 
-Open the finished file with `?audit=1` and the page prints the word count of
-every option, the longest/shortest spread per question, and whether the answer is
-the longest. Fix what it flags before you hand the file over.
+`scripts/verify.mjs` reports the word count of every option, the spread per
+question, and whether the answer is the only longest one. Fix what it flags
+before you hand the file over.
 
 ## Rule 1: the option asserts, the feedback explains
 
@@ -143,16 +143,10 @@ of coverage, and one pass through it covers one idea properly:
 The counterfactual is usually the best question in the set. It cannot be answered
 by recall.
 
-**Scaling to the change.** For a focused change, one pass through the ladder is
-the whole quiz: three to five questions. For a change spanning several
-subsystems, run the ladder once per major area rather than stretching five
-questions across all of them, and group the result under subheadings per area.
-Ten or twelve questions across four groups is a reasonable shape for a large PR.
-
-Let coverage set the number in both directions. A question invented to reach a
-quota tests trivia (which file, how many lines, what a constant is called), and
-once a reader hits one of those they correctly conclude the quiz is decoration.
-Four real questions beat five with a filler one.
+**Scaling.** One pass through the ladder is the whole quiz for a focused change.
+For one spanning several subsystems, run the ladder once per major area rather
+than stretching five questions across all of them: ten or twelve across four
+groups is a reasonable shape for a large PR.
 
 ## Worked example
 

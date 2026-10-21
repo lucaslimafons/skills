@@ -141,8 +141,8 @@ console.log("\nQUIZ");
 /*
   Tolerant parse of the QUIZ literal. Properties are only recognised at a real
   property position (after `{` or `,`), which keeps the words "stem:" or "text:"
-  inside a feedback string from being mistaken for one. The browser audit
-  (?audit=1) runs against the live data and stays authoritative.
+  inside a feedback string from being mistaken for one. A hand-rolled quiz with
+  no `const QUIZ` block is reported as skipped rather than silently passing.
 */
 function readStringLiteral(s, from) {
   let i = from;
