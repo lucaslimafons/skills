@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!--
+  Content-Security-Policy: defense in depth, not the primary control.
+  This document embeds source code from a private repository. `default-src 'none'`
+  means that even if something slipped past escaping, it has nowhere to send the
+  contents: no fetch, no XHR, no websocket, no remote font, no beacon, no form post.
+  Inline style/script are allowed because the whole point is a single self-contained
+  file. Do not add a host to any directive. If you find yourself wanting to, the
+  answer is to inline the asset instead.
+  (frame-ancestors / sandbox are ignored in a meta CSP; the directives below are not.)
+-->
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src data:; form-action 'none'; base-uri 'none'">
+<title>REPLACE: Change title</title>
+<style>
+  :root {
+    --bg: #fdfdfb;
+    --fg: #1a1a18;
+    --muted: #5f5f58;
+    --rule: #e3e1da;
+    --accent: #8c4a2f;
+    --accent-soft: #f6efe9;
+    --code-bg: #f4f3ee;
+    --ok: #2f6b45;
+    --ok-soft: #eaf3ed;
+    --no: #9a3330;
+    --no-soft: #f8ecea;
+    --maxw: 44rem;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #17171a;
+      --fg: #e8e7e2;
+      --muted: #a3a29b;
+      --rule: #32323a;
+      --accent: #d98a62;
+      --accent-soft: #241e1a;
+      --code-bg: #1f1f24;
+      --ok: #7cc496;
+      --ok-soft: #1a241d;
+      --no: #e08b86;
+      --no-soft: #251a19;
+    }
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0 auto;
+    padding: 1.5rem 1.15rem 6rem;
+    max-width: var(--maxw);
+    background: var(--bg);
+    color: var(--fg);
+    font: 1.0625rem/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    overflow-wrap: break-word;
+  }
+  h1 { font-size: 1.85rem; line-height: 1.2; margin: 0 0 .4rem; }
+  h2 { font-size: 1.4rem; line-height: 1.25; margin: 3rem 0 .75rem; padding-top: 1rem; border-top: 1px solid var(--rule); }
+  h3 { font-size: 1.1rem; margin: 2rem 0 .5rem; }
+  .byline { color: var(--muted); font-size: .9rem; margin: 0 0 2rem; }
+  a { color: var(--accent); }
+
+  /* Table of contents */
+  nav.toc { background: var(--accent-soft); border-radius: .6rem; padding: 1rem 1.15rem; margin: 0 0 2rem; }
+  nav.toc h2 { all: unset; display: block; font-weight: 600; font-size: .78rem; letter-spacing: .07em; text-transform: uppercase; color: var(--muted); margin-bottom: .5rem; }
+  nav.toc ol { margin: 0; padding-left: 1.2rem; }
+  nav.toc li { margin: .3rem 0; }
+
+  /* Code: `white-space: pre-wrap` is load-bearing. Without it the browser
+     collapses every newline and the block renders as one unreadable line. */
+  pre {
+    white-space: pre-wrap;
+    background: var(--code-bg);
+    border: 1px solid var(--rule);
+    border-radius: .5rem;
+    padding: .85rem 1rem;
+    overflow-x: auto;
+    font-size: .875rem;
+    line-height: 1.5;
+    tab-size: 2;
+  }
+  pre, code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  :not(pre) > code { background: var(--code-bg); padding: .12em .35em; border-radius: .25rem; font-size: .9em; }
+  pre .add { color: var(--ok); }
+  pre .del { color: var(--no); }
+  .filename { font-size: .8rem; color: var(--muted); margin: 1.5rem 0 .3rem; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+
+  /* Callouts: key concepts, definitions, edge cases, traps */
+  .callout { border-left: 3px solid var(--accent); background: var(--accent-soft); padding: .8rem 1rem; margin: 1.5rem 0; border-radius: 0 .4rem .4rem 0; }
+  .callout .label { display: block; font-size: .72rem; letter-spacing: .07em; text-transform: uppercase; color: var(--accent); font-weight: 700; margin-bottom: .3rem; }
+  .callout > :last-child { margin-bottom: 0; }
+
+  /* Skippable deep background */
+  details.deep { border: 1px solid var(--rule); border-radius: .5rem; padding: .25rem 1rem; margin: 1.5rem 0; }
+  details.deep > summary { cursor: pointer; font-weight: 600; padding: .6rem 0; }
+  details.deep > summary span { font-weight: 400; color: var(--muted); font-size: .9rem; }
+
+  /* Diagram scaffolding. Build diagrams from HTML boxes and flex rows, never ASCII:
+     ASCII art reflows into noise on a 390px screen and cannot be styled. */
+  .diagram { border: 1px solid var(--rule); border-radius: .6rem; padding: 1.1rem 1rem; margin: 1.5rem 0; background: var(--bg); }
+  .diagram figcaption { font-size: .85rem; color: var(--muted); margin-top: .85rem; text-align: center; }
+  .flow { display: flex; flex-wrap: wrap; gap: .5rem; align-items: stretch; justify-content: center; }
+  .node { flex: 1 1 8rem; min-width: 0; border: 1px solid var(--rule); border-radius: .45rem; padding: .6rem .7rem; background: var(--code-bg); font-size: .85rem; line-height: 1.4; }
+  .node b { display: block; font-size: .8rem; }
+  .node .data { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: .76rem; color: var(--muted); word-break: break-word; }
+  .node.hl { border-color: var(--accent); background: var(--accent-soft); }
+  .arrow { align-self: center; color: var(--muted); flex: 0 0 auto; }
+  @media (max-width: 30rem) { .arrow { transform: rotate(90deg); } }
+  .phone { border: 2px solid var(--rule); border-radius: .9rem; padding: .75rem; max-width: 17rem; margin: 0 auto; background: var(--code-bg); font-size: .85rem; }
+
+  table { border-collapse: collapse; width: 100%; font-size: .9rem; margin: 1.5rem 0; display: block; overflow-x: auto; }
+  th, td { border: 1px solid var(--rule); padding: .45rem .6rem; text-align: left; vertical-align: top; }
+  th { background: var(--code-bg); }
+
+  /* ---------- Quiz ---------- */
+  .quiz-q { border: 1px solid var(--rule); border-radius: .6rem; padding: 1.1rem 1rem; margin: 1.5rem 0; }
+  .quiz-q .stem { font-weight: 600; margin: 0 0 .9rem; }
+  .quiz-q .stem .num { color: var(--muted); font-weight: 400; }
+  .opts { display: flex; flex-direction: column; gap: .5rem; }
+  .opt {
+    display: block; width: 100%; text-align: left;
+    font: inherit; font-size: .95rem; line-height: 1.5;
+    color: var(--fg); background: var(--bg);
+    border: 1px solid var(--rule); border-radius: .45rem;
+    padding: .7rem .85rem; min-height: 2.75rem;
+    cursor: pointer;
+  }
+  .opt:hover:not(:disabled) { border-color: var(--accent); }
+  .opt:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .opt:disabled { cursor: default; opacity: 1; }
+  .opt.picked-ok { border-color: var(--ok); background: var(--ok-soft); }
+  .opt.picked-no { border-color: var(--no); background: var(--no-soft); }
+  .opt.reveal-ok { border-color: var(--ok); }
+  .mark { font-weight: 700; margin-right: .4rem; }
+  .mark.ok { color: var(--ok); }
+  .mark.no { color: var(--no); }
+  .why { font-size: .9rem; line-height: 1.55; margin: .5rem 0 0; padding: .6rem .8rem; border-radius: .4rem; background: var(--code-bg); color: var(--muted); }
+  .why.ok { background: var(--ok-soft); color: var(--fg); }
+  .why.no { background: var(--no-soft); color: var(--fg); }
+  .score { margin-top: 1.5rem; padding: .8rem 1rem; border-radius: .5rem; background: var(--accent-soft); font-weight: 600; }
+  #audit { white-space: pre-wrap; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: .8rem; }
+</style>
+</head>
+<body>
+
+<h1>REPLACE: What changed, in one line</h1>
+<p class="byline">REPLACE: repo &middot; branch or PR &middot; N files, +X/-Y &middot; YYYY-MM-DD</p>
+
+<nav class="toc">
+  <h2>Contents</h2>
+  <ol>
+    <li><a href="#background">Background</a></li>
+    <li><a href="#intuition">The core idea</a></li>
+    <li><a href="#code">Walking the code</a></li>
+    <li><a href="#quiz">Check your understanding</a></li>
+  </ol>
+</nav>
+
+<h2 id="background">Background</h2>
+<p>REPLACE: the narrow background a reader needs to follow this change.</p>
+
+<details class="deep">
+  <summary>REPLACE: New to this part of the system? <span>Start here (skip if you know it)</span></summary>
+  <p>REPLACE: the deeper background for someone seeing this subsystem for the first time.</p>
+</details>
+
+<h2 id="intuition">The core idea</h2>
+<p>REPLACE: the essence of the change, with toy data and a diagram. Not the details.</p>
+
+<figure class="diagram">
+  <div class="flow">
+    <div class="node"><b>REPLACE</b><span class="data">example value</span></div>
+    <div class="arrow">&rarr;</div>
+    <div class="node hl"><b>REPLACE</b><span class="data">example value</span></div>
+  </div>
+  <figcaption>REPLACE: what this diagram shows.</figcaption>
+</figure>
+
+<h2 id="code">Walking the code</h2>
+<p class="filename">REPLACE: path/to/file.ts:42</p>
+<pre><code>REPLACE: escaped code. &amp; &lt; &gt; must be entities.</code></pre>
+
+<h2 id="quiz">Check your understanding</h2>
+<p>REPLACE: one line of framing.</p>
+<div id="quiz"></div>
+<div id="audit" hidden></div>
+
+<script>
+/*
+  QUIZ DATA
+  Plain text only, in every field. The renderer writes these strings with
+  textContent, so a snippet like `if (a < b)` or `<Component />` shows up
+  literally instead of being parsed as markup. That is also exactly why HTML
+  here would not work: it is the same property that keeps a diff containing
+  `<script>` from becoming a script. Keep the prose short enough not to need it.
+
+  Shape:
+    stem    the question
+    options every option carries its own verdict and feedback, so order is free
+    why     shown after answering; this is where the reasoning belongs, NOT in `text`
+
+  Option order is shuffled at render time (see shuffle() below), so the order you
+  write them in is not the order anyone reads. Two consequences worth remembering:
+    - Never refer to an option by its position or letter, anywhere on the page.
+      Name its content instead: a positional reference is wrong as soon as the
+      page loads.
+    - You do not need to think about where to hide the answer. That is handled.
+*/
+const QUIZ = [
+  {
+    stem: "REPLACE: a question that needs the substance of the change to answer",
+    options: [
+      { text: "REPLACE: the correct claim, stated plainly", correct: true,
+        why: "REPLACE: why this is right, and the mechanism behind it." },
+      { text: "REPLACE: what the code did BEFORE this change", correct: false,
+        why: "REPLACE: this was true until this change, and here is what replaced it." },
+      { text: "REPLACE: the alternative the change deliberately did not take", correct: false,
+        why: "REPLACE: plausible, but it was rejected because..." },
+      { text: "REPLACE: a real nearby mechanism that is not what is at play here", correct: false,
+        why: "REPLACE: that mechanism exists, but it governs X, not this." }
+    ]
+  }
+];
+
+/* ---------- renderer ---------- */
+(function () {
+  var root = document.getElementById("quiz");
+  if (!root) return;
+  var answered = 0, right = 0;
+
+  function shuffle(arr) {
+    var a = arr.slice();
+    for (var i = a.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var t = a[i]; a[i] = a[j]; a[j] = t;
+    }
+    return a;
+  }
+
+  var scoreEl = document.createElement("div");
+  scoreEl.className = "score";
+  scoreEl.hidden = true;
+
+  QUIZ.forEach(function (q, qi) {
+    var box = document.createElement("div");
+    box.className = "quiz-q";
+
+    var stem = document.createElement("p");
+    stem.className = "stem";
+    var num = document.createElement("span");
+    num.className = "num";
+    num.textContent = (qi + 1) + ". ";
+    stem.appendChild(num);
+    stem.appendChild(document.createTextNode(q.stem));
+    box.appendChild(stem);
+
+    var list = document.createElement("div");
+    list.className = "opts";
+    var buttons = [];
+
+    shuffle(q.options).forEach(function (opt) {
+      var btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "opt";
+      btn.textContent = opt.text;
+
+      var why = document.createElement("p");
+      why.className = "why " + (opt.correct ? "ok" : "no");
+      why.hidden = true;
+      var mark = document.createElement("span");
+      mark.className = "mark " + (opt.correct ? "ok" : "no");
+      mark.textContent = opt.correct ? "Correct." : "Not this one.";
+      why.appendChild(mark);
+      why.appendChild(document.createTextNode(opt.why));
+
+      btn.addEventListener("click", function () {
+        if (box.dataset.done) return;
+        box.dataset.done = "1";
+        answered++;
+        if (opt.correct) right++;
+        btn.classList.add(opt.correct ? "picked-ok" : "picked-no");
+        buttons.forEach(function (b) {
+          b.el.disabled = true;
+          if (b.opt.correct) b.el.classList.add("reveal-ok");
+          if (b.opt === opt || b.opt.correct) b.why.hidden = false;
+        });
+        scoreEl.hidden = false;
+        scoreEl.textContent = right + " of " + answered + " answered correctly"
+          + (answered === QUIZ.length ? "." : " so far.");
+      });
+
+      buttons.push({ el: btn, why: why, opt: opt });
+      list.appendChild(btn);
+      list.appendChild(why);
+    });
+
+    box.appendChild(list);
+    root.appendChild(box);
+  });
+
+  root.appendChild(scoreEl);
+
+  /*
+    Authoring audit. Open the file with ?audit=1 to check the quiz for the tells
+    that let a reader score well without understanding anything: an answer that
+    is visibly longer than its distractors, or a giveaway phrase. Invisible to
+    a normal reader.
+  */
+  if (location.search.indexOf("audit=1") === -1) return;
+  var out = document.getElementById("audit");
+  var BANNED = ["all of the above", "none of the above", "both a and b", "any of these"];
+  var lines = ["QUIZ AUDIT  (" + QUIZ.length + " questions)", ""];
+  var problems = 0;
+  QUIZ.forEach(function (q, qi) {
+    var words = q.options.map(function (o) { return o.text.trim().split(/\s+/).length; });
+    var key = q.options.findIndex(function (o) { return o.correct; });
+    var hi = Math.max.apply(null, words), lo = Math.min.apply(null, words);
+    var ratio = lo ? hi / lo : 99;
+    lines.push("Q" + (qi + 1) + "  words=[" + words.join(", ") + "]  spread=" + ratio.toFixed(2) + "x");
+    if (q.options.filter(function (o) { return o.correct; }).length !== 1) {
+      lines.push("   FAIL exactly one option must be correct"); problems++;
+    }
+    if (ratio > 1.3) {
+      lines.push("   FAIL length spread > 1.30x; shorten the answer, do not pad the distractors"); problems++;
+    }
+    // Only a *uniquely* longest answer is a tell. Tying for longest is fine, and
+    // warning on a tie would train the author to ignore the audit.
+    var longestCount = words.filter(function (w) { return w === hi; }).length;
+    if (words[key] === hi && longestCount === 1) {
+      lines.push("   WARN the answer is the only longest option"); problems++;
+    }
+    q.options.forEach(function (o) {
+      BANNED.forEach(function (b) {
+        if (o.text.toLowerCase().indexOf(b) !== -1) { lines.push("   FAIL banned phrase: " + b); problems++; }
+      });
+    });
+  });
+  lines.push("", problems ? problems + " issue(s) to fix." : "Clean.");
+  out.hidden = false;
+  out.textContent = lines.join("\n");
+})();
+</script>
+</body>
+</html>
