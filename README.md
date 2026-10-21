@@ -28,6 +28,8 @@ npx skills@latest add lucaslimafons/skills/daily-git-flow
 npx skills@latest add lucaslimafons/skills/explain-diff
 ```
 
+More on how the quiz is built and why: [explain-diff/README.md](explain-diff/README.md).
+
 **feature-deep-dive** — Pre-build research and approach analysis: clarifies the use case, discovers the project's stack and conventions, researches how top apps solve it via live web search, then recommends a grounded, buildable approach — without silent assumptions, asking when scope or intent is unclear.
 
 ```
