@@ -109,6 +109,13 @@
   .arrow { align-self: center; color: var(--muted); flex: 0 0 auto; }
   @media (max-width: 30rem) { .arrow { transform: rotate(90deg); } }
   .phone { border: 2px solid var(--rule); border-radius: .9rem; padding: .75rem; max-width: 17rem; margin: 0 auto; background: var(--code-bg); font-size: .85rem; }
+  /* Before/after: two labelled rows, the workhorse for "what changed". The label
+     sits above its row on a phone and beside it with room to spare. */
+  .ba { display: grid; gap: .75rem; }
+  .ba-row { display: grid; grid-template-columns: 4.5rem 1fr; gap: .6rem; align-items: center; }
+  .ba-row > .rowlabel { font-size: .72rem; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); font-weight: 700; }
+  .ba-row.after > .rowlabel { color: var(--accent); }
+  @media (max-width: 26rem) { .ba-row { grid-template-columns: 1fr; gap: .25rem; } }
 
   table { border-collapse: collapse; width: 100%; font-size: .9rem; margin: 1.5rem 0; display: block; overflow-x: auto; }
   th, td { border: 1px solid var(--rule); padding: .45rem .6rem; text-align: left; vertical-align: top; }
@@ -140,7 +147,7 @@
   .why.ok { background: var(--ok-soft); color: var(--fg); }
   .why.no { background: var(--no-soft); color: var(--fg); }
   .score { margin-top: 1.5rem; padding: .8rem 1rem; border-radius: .5rem; background: var(--accent-soft); font-weight: 600; }
-  #audit { white-space: pre-wrap; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: .8rem; }
+  #quiz h3:first-child { margin-top: 1rem; }
 </style>
 </head>
 <body>
@@ -185,7 +192,6 @@
 <h2 id="quiz">Check your understanding</h2>
 <p>REPLACE: one line of framing.</p>
 <div id="quiz"></div>
-<div id="audit" hidden></div>
 
 <script>
 /*
@@ -196,10 +202,14 @@
   here would not work: it is the same property that keeps a diff containing
   `<script>` from becoming a script. Keep the prose short enough not to need it.
 
+  Backticks have no meaning here and render as literal characters, so write
+  `status !== "active"` without them rather than reaching for markup.
+
   Shape:
     stem    the question
     options every option carries its own verdict and feedback, so order is free
     why     shown after answering; this is where the reasoning belongs, NOT in `text`
+    group   optional heading; consecutive questions sharing one sit under it
 
   Option order is shuffled at render time (see shuffle() below), so the order you
   write them in is not the order anyone reads. Two consequences worth remembering:
@@ -212,13 +222,15 @@ const QUIZ = [
   {
     stem: "REPLACE: a question that needs the substance of the change to answer",
     options: [
-      { text: "REPLACE: the correct claim, stated plainly", correct: true,
+      // All four are nine words long: the spread this template is checked
+      // against is 1.3x, so keep them within sight of each other.
+      { text: "REPLACE: the correct claim, stated plainly without its reason", correct: true,
         why: "REPLACE: why this is right, and the mechanism behind it." },
-      { text: "REPLACE: what the code did BEFORE this change", correct: false,
+      { text: "REPLACE: what the code did before this change landed", correct: false,
         why: "REPLACE: this was true until this change, and here is what replaced it." },
-      { text: "REPLACE: the alternative the change deliberately did not take", correct: false,
+      { text: "REPLACE: the alternative this change deliberately did not take", correct: false,
         why: "REPLACE: plausible, but it was rejected because..." },
-      { text: "REPLACE: a real nearby mechanism that is not what is at play here", correct: false,
+      { text: "REPLACE: a real nearby mechanism not at play here", correct: false,
         why: "REPLACE: that mechanism exists, but it governs X, not this." }
     ]
   }
@@ -243,7 +255,20 @@ const QUIZ = [
   scoreEl.className = "score";
   scoreEl.hidden = true;
 
+  var lastGroup = null;
+
   QUIZ.forEach(function (q, qi) {
+    // Optional `group`: with more than about six questions a flat list reads as
+    // an exam, so consecutive questions sharing a group get one heading above
+    // them. textContent, like everything else here, so a group name taken from
+    // a branch or subsystem cannot inject markup.
+    if (q.group && q.group !== lastGroup) {
+      var h = document.createElement("h3");
+      h.textContent = q.group;
+      root.appendChild(h);
+      lastGroup = q.group;
+    }
+
     var box = document.createElement("div");
     box.className = "quiz-q";
 
@@ -301,45 +326,6 @@ const QUIZ = [
   });
 
   root.appendChild(scoreEl);
-
-  /*
-    Authoring audit. Open the file with ?audit=1 to check the quiz for the tells
-    that let a reader score well without understanding anything: an answer that
-    is visibly longer than its distractors, or a giveaway phrase. Invisible to
-    a normal reader.
-  */
-  if (location.search.indexOf("audit=1") === -1) return;
-  var out = document.getElementById("audit");
-  var BANNED = ["all of the above", "none of the above", "both a and b", "any of these"];
-  var lines = ["QUIZ AUDIT  (" + QUIZ.length + " questions)", ""];
-  var problems = 0;
-  QUIZ.forEach(function (q, qi) {
-    var words = q.options.map(function (o) { return o.text.trim().split(/\s+/).length; });
-    var key = q.options.findIndex(function (o) { return o.correct; });
-    var hi = Math.max.apply(null, words), lo = Math.min.apply(null, words);
-    var ratio = lo ? hi / lo : 99;
-    lines.push("Q" + (qi + 1) + "  words=[" + words.join(", ") + "]  spread=" + ratio.toFixed(2) + "x");
-    if (q.options.filter(function (o) { return o.correct; }).length !== 1) {
-      lines.push("   FAIL exactly one option must be correct"); problems++;
-    }
-    if (ratio > 1.3) {
-      lines.push("   FAIL length spread > 1.30x; shorten the answer, do not pad the distractors"); problems++;
-    }
-    // Only a *uniquely* longest answer is a tell. Tying for longest is fine, and
-    // warning on a tie would train the author to ignore the audit.
-    var longestCount = words.filter(function (w) { return w === hi; }).length;
-    if (words[key] === hi && longestCount === 1) {
-      lines.push("   WARN the answer is the only longest option"); problems++;
-    }
-    q.options.forEach(function (o) {
-      BANNED.forEach(function (b) {
-        if (o.text.toLowerCase().indexOf(b) !== -1) { lines.push("   FAIL banned phrase: " + b); problems++; }
-      });
-    });
-  });
-  lines.push("", problems ? problems + " issue(s) to fix." : "Clean.");
-  out.hidden = false;
-  out.textContent = lines.join("\n");
 })();
 </script>
 </body>

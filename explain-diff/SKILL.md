@@ -47,9 +47,16 @@ Explaining the wrong change is the most expensive mistake available here, and it
 is invisible until the end. Work down this ladder and take the first match:
 
 1. An explicit target in the request (a PR URL or number, a branch, a SHA, a range).
-2. A PR number or URL: `gh pr diff <n>` and `gh pr view <n> --json title,body`.
-   The body often states the *why*, which is the hardest thing to reconstruct from
-   a diff.
+2. A PR number or URL: `gh pr diff <n>`, `gh pr view <n> --json title,body` and
+   `gh pr view <n> --json commits`. The body often states the *why*, which is the
+   hardest thing to reconstruct from a diff, and it is also the most likely thing
+   to be **stale**: it describes the branch as it was when someone wrote it, not
+   as it is now. A later commit that removes a parameter or reverts an approach
+   leaves the body confidently documenting a mechanism that is no longer there.
+   Read the commit subjects, and when the body describes something load-bearing,
+   confirm it still exists in the diff before you explain it. Repeating a dead
+   mechanism from a PR body is the single easiest way to ship a fabricated
+   explanation.
 3. Otherwise the current branch against the default branch:
    `git diff $(git rev-parse --abbrev-ref origin/HEAD)...HEAD`
    (three dots, so you see what this branch added and not what the base moved on
@@ -60,7 +67,9 @@ is invisible until the end. Work down this ladder and take the first match:
 
 Then say in one line what you resolved and how big it is ("PR #226, 14 files,
 +480/-96, explaining the ticket gate"). If that is wrong the reader can stop you
-in two seconds rather than after several minutes of writing.
+in two seconds rather than after several minutes of writing. Repeat it in your
+final message too: whoever asked may never see the intermediate output, and the
+target you picked is the one assumption that invalidates everything else.
 
 **On a large change**, do not try to cover everything evenly. Pick the spine of
 the change, explain it properly, and name what you left out in a short "not
@@ -112,6 +121,11 @@ as one piece of writing rather than four. Write with the clarity and flow of
 Martin Kleppmann: concrete, unhurried, no filler, happy to say "this is subtle"
 when it is.
 
+Where that pulls against the phone, the phone wins. Borrow his clarity and his
+willingness to follow an argument all the way down, not his column width: a
+paragraph that reads as one comfortable block on a laptop becomes a wall on a
+390px screen, and a wall gets scrolled past. Break on each move in the argument.
+
 ## 4. Diagrams
 
 Pick two or three diagram *families* and reuse them for the before/after and the
@@ -122,8 +136,11 @@ page of one-off illustrations is a page the reader has to relearn constantly.
 decoration; one containing `join_code=A4F2, via=ticket` is an explanation.
 
 Useful families, all scaffolded in the template: a left-to-right flow of `.node`
-boxes for data moving between components; a simplified `.phone` mock for UI
-changes; a two-row before/after comparison; a small table for state transitions.
+boxes for data moving between components; a labelled two-row `.ba` before/after
+comparison, which is the workhorse for "what changed"; a simplified `.phone` mock
+for UI changes; a small table for state transitions. Add a class of your own when
+none of these fits what you are drawing rather than bending `.phone` into a shape
+it does not mean.
 
 **No ASCII diagrams.** They reflow into noise at 390px, cannot be styled, and
 break the moment a label changes length. Use HTML boxes, HTML lists for lists of
@@ -146,10 +163,11 @@ counts, or a detail nobody needs is worse than no question, because it teaches t
 reader that the quiz is decoration and they stop trying. If you cannot find a
 fifth idea worth testing, ship four.
 
-Past roughly six questions, group them under `<h3>` subheadings that mirror the
-areas of the change ("The ticket", "What the host sees"). A flat list of twelve
-reads as an exam; four groups of three reads as a tour, and the reader can stop
-after the part they care about.
+Past roughly six questions, give each one a `group` naming the area of the change
+it belongs to ("The ticket", "What the host sees"); the template emits one
+heading above each run of questions sharing a group. A flat list of twelve reads
+as an exam; four groups of three reads as a tour, and the reader can stop after
+the part they care about.
 
 - **The option states a claim; the feedback explains it.** Moving "because..."
   into the post-answer feedback is what stops the correct option from being
@@ -247,13 +265,11 @@ It reads the file without executing it and exits non-zero if anything fails:
   the only longest option, banned options, and any reference to an option by
   position.
 
-The same quiz audit runs in the browser if you prefer to see it next to the
-questions. It needs a real URL, because `open` treats a bare path with a query
-string as a filename and will tell you the file does not exist:
-
-```bash
-open "file://$HOME/explanations/2026-10-21-explanation-<slug>.html?audit=1"
-```
+Everything it reports is readable from the terminal on purpose. An earlier draft
+put the quiz audit inside the page behind `?audit=1`, which meant the one check
+the skill insists on could only be read by a human with a browser open: whoever
+generated the file could not see its own result, so in practice the check got
+skipped and reported as passing.
 
 Fix whatever is flagged, then open the page normally and read it once as a reader
 would, at phone width, checking that nothing overflows horizontally except inside
