@@ -17,6 +17,28 @@ npx skills@latest add lucaslimafons/skills/explain-diff
 Then ask for a change to be explained: *"explain PR #225"*, *"walk me through this
 diff"*, *"onboard me onto this change"*.
 
+## What it looks like
+
+A complete generated page is kept at
+[`examples/sample-explainer.html`](examples/sample-explainer.html). It explains a
+real crash in a React Native app, where tapping a unit picker while the number pad
+was open crashed the screen. Repository, branch and commit identifiers have been
+replaced and nothing confidential is quoted; the library it walks through,
+`@gorhom/bottom-sheet`, is MIT licensed and public.
+
+GitHub shows an HTML file as source rather than rendering it, so download the file
+and open it in a browser to click through the quiz. The screenshots below are the
+quick version.
+
+| | |
+| --- | --- |
+| ![The title, the summary callout and the table of contents](../docs/explain-diff/01-top-and-contents.png) | **Opening.** A one-line title that says what changed, a byline carrying the size of the diff, and a table of contents that reaches the subsections of the walkthrough. |
+| ![A callout explaining one cause with two symptoms, above a before and after diagram](../docs/explain-diff/02-callout-and-diagram.png) | **Explaining.** Callouts carry the ideas worth stopping on. Diagrams are built from HTML boxes and carry real example data, never a box labelled "Server". |
+| ![A quiz question answered, showing feedback under both the wrong and the correct option](../docs/explain-diff/03-quiz-answered.png) | **Checking.** Options are reordered on every page load. The reasoning lives in the feedback you see after answering, which is what stops the correct option being the longest. |
+
+That page is also a conformance test. It passes `scripts/verify.mjs` with no
+failures, holds to five questions, and averages 13.7 words per sentence.
+
 ## What you get
 
 One HTML file, written outside the repo with a dated filename, that opens with no
