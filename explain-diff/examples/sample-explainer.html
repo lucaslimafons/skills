@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src data:; form-action 'none'; base-uri 'none'">
+<title>Why picking a unit crashed the app</title>
+<style>
+  :root {
+    --bg: #fdfdfb;
+    --fg: #1a1a18;
+    --muted: #5f5f58;
+    --rule: #e3e1da;
+    --accent: #8c4a2f;
+    --accent-soft: #f6efe9;
+    --code-bg: #f4f3ee;
+    --ok: #2f6b45;
+    --ok-soft: #eaf3ed;
+    --no: #9a3330;
+    --no-soft: #f8ecea;
+    --maxw: 44rem;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #17171a;
+      --fg: #e8e7e2;
+      --muted: #a3a29b;
+      --rule: #32323a;
+      --accent: #d98a62;
+      --accent-soft: #241e1a;
+      --code-bg: #1f1f24;
+      --ok: #7cc496;
+      --ok-soft: #1a241d;
+      --no: #e08b86;
+      --no-soft: #251a19;
+    }
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0 auto;
+    padding: 1.5rem 1.15rem 6rem;
+    max-width: var(--maxw);
+    background: var(--bg);
+    color: var(--fg);
+    font: 1.0625rem/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    overflow-wrap: break-word;
+  }
+  h1 { font-size: 1.85rem; line-height: 1.2; margin: 0 0 .4rem; }
+  h2 { font-size: 1.4rem; line-height: 1.25; margin: 3rem 0 .75rem; padding-top: 1rem; border-top: 1px solid var(--rule); }
+  h3 { font-size: 1.1rem; margin: 2rem 0 .5rem; }
+  .byline { color: var(--muted); font-size: .9rem; margin: 0 0 2rem; }
+  a { color: var(--accent); }
+
+  nav.toc { background: var(--accent-soft); border-radius: .6rem; padding: 1rem 1.15rem; margin: 0 0 2rem; }
+  nav.toc h2 { all: unset; display: block; font-weight: 600; font-size: .78rem; letter-spacing: .07em; text-transform: uppercase; color: var(--muted); margin-bottom: .5rem; }
+  nav.toc ol { margin: 0; padding-left: 1.2rem; }
+  nav.toc li { margin: .3rem 0; }
+  nav.toc ol ol { padding-left: 1.1rem; margin: .25rem 0; font-size: .95em; }
+
+  pre {
+    white-space: pre-wrap;
+    background: var(--code-bg);
+    border: 1px solid var(--rule);
+    border-radius: .5rem;
+    padding: .85rem 1rem;
+    overflow-x: auto;
+    font-size: .875rem;
+    line-height: 1.5;
+    tab-size: 2;
+  }
+  pre, code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  :not(pre) > code { background: var(--code-bg); padding: .12em .35em; border-radius: .25rem; font-size: .9em; }
+  pre .add { color: var(--ok); }
+  pre .del { color: var(--no); }
+  .filename { font-size: .8rem; color: var(--muted); margin: 1.5rem 0 .3rem; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+
+  .callout { border-left: 3px solid var(--accent); background: var(--accent-soft); padding: .8rem 1rem; margin: 1.5rem 0; border-radius: 0 .4rem .4rem 0; }
+  .callout .label { display: block; font-size: .72rem; letter-spacing: .07em; text-transform: uppercase; color: var(--accent); font-weight: 700; margin-bottom: .3rem; }
+  .callout > :last-child { margin-bottom: 0; }
+
+  details.deep { border: 1px solid var(--rule); border-radius: .5rem; padding: .25rem 1rem; margin: 1.5rem 0; }
+  details.deep > summary { cursor: pointer; font-weight: 600; padding: .6rem 0; }
+  details.deep > summary span { font-weight: 400; color: var(--muted); font-size: .9rem; }
+
+  .diagram { border: 1px solid var(--rule); border-radius: .6rem; padding: 1.1rem 1rem; margin: 1.5rem 0; background: var(--bg); }
+  .diagram figcaption { font-size: .85rem; color: var(--muted); margin-top: .85rem; text-align: center; }
+  .flow { display: flex; flex-wrap: wrap; gap: .5rem; align-items: stretch; justify-content: center; }
+  .node { flex: 1 1 8rem; min-width: 0; border: 1px solid var(--rule); border-radius: .45rem; padding: .6rem .7rem; background: var(--code-bg); font-size: .85rem; line-height: 1.4; }
+  .node b { display: block; font-size: .8rem; }
+  .node .data { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: .76rem; color: var(--muted); word-break: break-word; }
+  .node.hl { border-color: var(--accent); background: var(--accent-soft); }
+  .node.bad { border-color: var(--no); background: var(--no-soft); }
+  .arrow { align-self: center; color: var(--muted); flex: 0 0 auto; }
+  @media (max-width: 30rem) { .arrow { transform: rotate(90deg); } }
+  .phone { border: 2px solid var(--rule); border-radius: .9rem; padding: .75rem; max-width: 17rem; margin: 0 auto; background: var(--code-bg); font-size: .85rem; }
+  .phone .strip { border: 1px solid var(--rule); border-radius: .35rem; padding: .35rem .5rem; margin: .3rem 0; background: var(--bg); }
+  .phone .pad { border: 1px solid var(--no); border-radius: .35rem; padding: .5rem; margin-top: .4rem; background: var(--no-soft); text-align: center; }
+  .phone .pad.gone { border-color: var(--ok); background: var(--ok-soft); }
+  .ba { display: grid; gap: .75rem; }
+  .ba-row { display: grid; grid-template-columns: 4.5rem 1fr; gap: .6rem; align-items: center; }
+  .ba-row > .rowlabel { font-size: .72rem; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); font-weight: 700; }
+  .ba-row.after > .rowlabel { color: var(--accent); }
+  @media (max-width: 26rem) { .ba-row { grid-template-columns: 1fr; gap: .25rem; } }
+
+  table { border-collapse: collapse; width: 100%; font-size: .9rem; margin: 1.5rem 0; display: block; overflow-x: auto; }
+  th, td { border: 1px solid var(--rule); padding: .45rem .6rem; text-align: left; vertical-align: top; }
+  th { background: var(--code-bg); }
+
+  .quiz-q { border: 1px solid var(--rule); border-radius: .6rem; padding: 1.1rem 1rem; margin: 1.5rem 0; }
+  .quiz-q .stem { font-weight: 600; margin: 0 0 .9rem; }
+  .quiz-q .stem .num { color: var(--muted); font-weight: 400; }
+  .opts { display: flex; flex-direction: column; gap: .5rem; }
+  .opt {
+    display: block; width: 100%; text-align: left;
+    font: inherit; font-size: .95rem; line-height: 1.5;
+    color: var(--fg); background: var(--bg);
+    border: 1px solid var(--rule); border-radius: .45rem;
+    padding: .7rem .85rem; min-height: 2.75rem;
+    cursor: pointer;
+  }
+  .opt:hover:not(:disabled) { border-color: var(--accent); }
+  .opt:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .opt:disabled { cursor: default; opacity: 1; }
+  .opt.picked-ok { border-color: var(--ok); background: var(--ok-soft); }
+  .opt.picked-no { border-color: var(--no); background: var(--no-soft); }
+  .opt.reveal-ok { border-color: var(--ok); }
+  .mark { font-weight: 700; margin-right: .4rem; }
+  .mark.ok { color: var(--ok); }
+  .mark.no { color: var(--no); }
+  .why { font-size: .9rem; line-height: 1.55; margin: .5rem 0 0; padding: .6rem .8rem; border-radius: .4rem; background: var(--code-bg); color: var(--muted); }
+  .why.ok { background: var(--ok-soft); color: var(--fg); }
+  .why.no { background: var(--no-soft); color: var(--fg); }
+  .score { margin-top: 1.5rem; padding: .8rem 1rem; border-radius: .5rem; background: var(--accent-soft); font-weight: 600; }
+  #quiz h3:first-child { margin-top: 1rem; }
+</style>
+</head>
+<body>
+
+<h1>Why picking a unit crashed the app</h1>
+<p class="byline">example-app &middot; a four-commit PR &middot; 14 files, +395/&minus;69</p>
+<div class="callout"><span class="label">Sample output</span><p>A real page produced by the <code>explain-diff</code> skill, kept as a reference for the format. It explains a genuine crash in a private React Native app, so repository, branch and commit identifiers have been replaced and nothing confidential is quoted. The library it walks through is <code>@gorhom/bottom-sheet</code> 5.2.8, which is MIT licensed and public, and the upstream issues it cites are real.</p></div>
+
+<nav class="toc">
+  <h2>Contents</h2>
+  <ol>
+    <li><a href="#background">Background</a></li>
+    <li><a href="#intuition">The core idea</a></li>
+    <li><a href="#code">Walking the code</a>
+      <ol>
+        <li><a href="#code-setup">The two sheets that sit on top of each other</a></li>
+        <li><a href="#code-index">Where the bad number comes from</a></li>
+        <li><a href="#code-stack">Who stores the bad number</a></li>
+        <li><a href="#code-crash">Where it blows up</a></li>
+        <li><a href="#code-fix1">Fix 1: do not minimize the sheet below</a></li>
+        <li><a href="#code-fix2">Fix 2: close the keyboard</a></li>
+        <li><a href="#code-i18n">The i18n pass, and the bug it uncovered</a></li>
+        <li><a href="#code-shadow">A rename that prevents a future bug</a></li>
+        <li><a href="#code-tests">The tests</a></li>
+      </ol>
+    </li>
+    <li><a href="#quiz">Check your understanding</a></li>
+    <li><a href="#open">Open questions</a></li>
+  </ol>
+</nav>
+
+<h2 id="background">Background</h2>
+
+<p>The app has a recipe wizard. Step 2 lets you edit one ingredient. Tapping the pencil on an ingredient row opens a <strong>bottom sheet</strong>: a panel that slides up from the bottom of the screen.</p>
+
+<p>That sheet is <code>IngredientFormSheet</code>. It holds five fields. The first is <em>Quantity</em>, which is numeric, so tapping it opens the number pad. The second is <em>Unit</em>. Unit is not a text field. It is a button that opens a <strong>second bottom sheet</strong>, with one chip per unit.</p>
+
+<p>So the app shows a sheet on top of a sheet. That is the whole setting for this bug.</p>
+
+<details class="deep">
+  <summary>New to bottom sheets in this app? <span>Start here (skip if you know them)</span></summary>
+
+  <p>The app uses a library called <code>@gorhom/bottom-sheet</code>, version 5.2.8. Three of its ideas matter here.</p>
+
+  <p><strong>Detents.</strong> A sheet can stop at a few heights. Each stopping height is a <em>detent</em>. The library keeps them in an array, measured in points from the top of the screen. Code refers to a detent by its <em>index</em> in that array.</p>
+
+  <p><strong>Dynamic sizing.</strong> With <code>enableDynamicSizing</code>, the sheet measures its own content and builds a single detent from it. So these sheets have an array of exactly one entry. The only valid indexes are <code>0</code> (open) and <code>-1</code> (closed).</p>
+
+  <p><strong>The modal stack.</strong> Sheets opened as <code>BottomSheetModal</code> register with a shared provider. The provider keeps a queue. When a new sheet opens, it decides what happens to the one already showing. That decision is the <code>stackBehavior</code> prop.</p>
+
+  <p>There is also <code>keyboardBehavior</code>. Set to <code>"interactive"</code>, the sheet lifts itself as the keyboard opens, so the focused field stays visible above it. That lift is not a detent. It is a position the library computes on the fly.</p>
+</details>
+
+<p>Two earlier facts about this code are worth knowing, because the bug sits exactly between them.</p>
+
+<p>First, the ingredient sheet uses <code>keyboardShouldPersistTaps="handled"</code> on its scroll view. That means tapping a button inside the sheet does <em>not</em> close the keyboard first. It was set so a tap on Save works on the first press instead of only dismissing the keyboard.</p>
+
+<p>Second, an earlier commit already fixed a crash in these same sheets. It removed <code>keyboardBlurBehavior="restore"</code>, because that setting made a sheet snap back to a stored index that was out of range. The error message in that commit is the same message in this one. This PR is the same fault reached by a different route.</p>
+
+<h2 id="intuition">The core idea</h2>
+
+<p>The library has one variable that is supposed to hold a detent <em>index</em>. In one situation it writes a <em>position in points</em> into that variable instead. The two are different kinds of number. Nothing checks the difference at the moment it is written.</p>
+
+<p>Here is the situation. The keyboard is open, so the sheet sits at a lifted position. The library looks for that position in the detents array. It is not there, because the keyboard lift is not a detent. So it falls back to a number that is not an index.</p>
+
+<figure class="diagram">
+  <table>
+    <thead>
+      <tr><th>State</th><th>Sheet position</th><th>Found in detents?</th><th>Reported index</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Open, no keyboard</td><td>540.0</td><td>yes, entry 0</td><td><code>0</code> &mdash; valid</td></tr>
+      <tr><td>Open, keyboard up</td><td>300.5</td><td>no</td><td><code>300.5</code> &mdash; a position</td></tr>
+      <tr><td>Closed</td><td>874.0</td><td>closed detent</td><td><code>-1</code> &mdash; valid</td></tr>
+    </tbody>
+  </table>
+  <figcaption>The detents array has one entry, so only 0 and -1 are legal indexes. With the keyboard up the sheet reports 300.5.</figcaption>
+</figure>
+
+<p>On its own that bad number is harmless. It only gets read if something asks the sheet to go back to where it was. Opening the unit picker is exactly that something.</p>
+
+<p>By default, opening a sheet over another sheet <strong>minimizes</strong> the one below: it slides down, and the library remembers which index to restore it to. It remembers <code>300.5</code>. When the unit picker closes, it asks the ingredient sheet to go back to index <code>300.5</code>. The sheet has one detent. The library checks the range, finds the number impossible, and throws.</p>
+
+<figure class="diagram">
+  <div class="flow">
+    <div class="node"><b>1. Keyboard opens</b><span class="data">index := 300.5</span></div>
+    <div class="arrow">&rarr;</div>
+    <div class="node"><b>2. Unit sheet opens</b><span class="data">restoreIndex := 300.5</span></div>
+    <div class="arrow">&rarr;</div>
+    <div class="node"><b>3. Unit chosen</b><span class="data">snapToIndex(300.5)</span></div>
+    <div class="arrow">&rarr;</div>
+    <div class="node bad"><b>4. Invariant</b><span class="data">expected -1 .. 0</span></div>
+  </div>
+  <figcaption>The bad number is written in step 1 and only read in step 3. Nothing in between notices.</figcaption>
+</figure>
+
+<div class="callout">
+  <span class="label">One cause, two symptoms</span>
+  <p>The keyboard never closing is not a separate bug sitting next to the crash. It is the <em>same</em> fact. The keyboard being up is what makes the index bad, and it is also what hides the unit list. Fix the stack and the crash goes. Fix the keyboard and the list is visible. You need both, for reasons the walkthrough reaches in <a href="#code-fix2">Fix 2</a>.</p>
+</div>
+
+<figure class="diagram">
+  <div class="ba">
+    <div class="ba-row">
+      <span class="rowlabel">Before</span>
+      <div class="phone">
+        <div class="strip">Quantity &mdash; 500</div>
+        <div class="strip">Unit &mdash; g</div>
+        <div class="pad">number pad (still open, covers the unit list)</div>
+      </div>
+    </div>
+    <div class="ba-row after">
+      <span class="rowlabel">After</span>
+      <div class="phone">
+        <div class="strip">Select unit</div>
+        <div class="strip">g &nbsp; kg &nbsp; ml &nbsp; l &nbsp; cup &nbsp; tbsp</div>
+        <div class="pad gone">number pad dismissed</div>
+      </div>
+    </div>
+  </div>
+  <figcaption>The user-visible half of the change. The crash is the half you cannot draw.</figcaption>
+</figure>
+
+<h2 id="code">Walking the code</h2>
+
+<p>This follows the fault, not the file order. The two fixed lines come late, because they only make sense once you have seen what they prevent.</p>
+
+<h3 id="code-setup">1. The two sheets that sit on top of each other</h3>
+
+<p>The ingredient sheet sets both of the props that matter: it sizes itself from its content, and it lifts for the keyboard.</p>
+
+<p class="filename">src/features/recipes/IngredientFormSheet.tsx:168&ndash;178</p>
+<pre><code>&lt;BottomSheetModal
+  ref={sheetRef}
+  enableDynamicSizing
+  backdropComponent={renderBackdrop}
+  onDismiss={handleModalDismiss}
+  handleIndicatorStyle={styles.handleIndicator}
+  backgroundStyle={styles.sheetBackground}
+  enablePanDownToClose
+  keyboardBehavior="interactive"
+  android_keyboardInputMode="adjustResize"
+&gt;</code></pre>
+
+<p><code>enableDynamicSizing</code> gives this sheet an array of one detent. <code>keyboardBehavior="interactive"</code> makes it lift when the number pad opens. Hold both facts.</p>
+
+<p>Inside it, the Unit field renders <code>UnitPicker</code>, which contains a whole second <code>BottomSheetModal</code> of its own. So one modal is nested inside another modal's content.</p>
+
+<p class="filename">src/features/recipes/IngredientFormSheet.tsx:222&ndash;227</p>
+<pre><code>&lt;UnitPicker
+  label={t('add.unit_label')}
+  value={value ?? null}
+  onChange={onChange}
+  placeholder={t('add.unit_placeholder')}
+/&gt;</code></pre>
+
+<h3 id="code-index">2. Where the bad number comes from</h3>
+
+<p>When the sheet settles, the library works out which index it landed on. It looks up the position in the detents array. If the keyboard is open, the lifted position is not in that array, so the lookup fails and this fallback runs.</p>
+
+<p class="filename">node_modules/@gorhom/bottom-sheet/src/components/bottomSheet/BottomSheet.tsx:653&ndash;663</p>
+<pre><code>/**
+ * because keyboard position is not part of the detents array,
+ * we will need to manually set the index to the highest detent index.
+ */
+if (
+  index === -1 &amp;&amp;
+  status === KEYBOARD_STATUS.SHOWN &amp;&amp;
+  position !== closedDetentPosition
+) {
+  index = highestDetentPosition ?? DEFAULT_KEYBOARD_INDEX;
+}</code></pre>
+
+<div class="callout">
+  <span class="label">Read the comment against the code</span>
+  <p>The comment says "the highest detent <em>index</em>". The code assigns <code>highestDetentPosition</code>, which is a <em>position</em> in points. For a one-detent sheet the index should be <code>0</code> and the position is something like <code>300.5</code>. This looks like a genuine bug in the library, not a thing the app is holding wrong. See <a href="#open">Open questions</a>.</p>
+</div>
+
+<h3 id="code-stack">3. Who stores the bad number</h3>
+
+<p>Opening a sheet goes through a shared provider. It looks at whatever sheet is currently on top and applies the <code>stackBehavior</code> of the incoming one. The default is <code>"switch"</code>.</p>
+
+<p class="filename">node_modules/@gorhom/bottom-sheet/src/components/bottomSheetModalProvider/BottomSheetModalProvider.tsx:71&ndash;75</p>
+<pre><code>if (stackBehavior === MODAL_STACK_BEHAVIOR.replace) {
+  currentMountedSheet.ref?.current?.dismiss();
+} else if (stackBehavior === MODAL_STACK_BEHAVIOR.switch) {
+  currentMountedSheet.ref?.current?.minimize();
+}</code></pre>
+
+<p><code>minimize()</code> slides the ingredient sheet out of the way and saves the index to come back to. The index it saves is the one the sheet last reported, which is now <code>300.5</code>.</p>
+
+<p class="filename">node_modules/@gorhom/bottom-sheet/src/components/bottomSheetModal/BottomSheetModal.tsx:274&ndash;286</p>
+<pre><code>minimized.current = true;
+
+/**
+ * if modal got minimized before it finish its mounting
+ * animation, we set the `restoreIndexRef` to the
+ * provided index.
+ */
+if (currentIndexRef.current === -1) {
+  restoreIndexRef.current = index;
+} else {
+  restoreIndexRef.current = currentIndexRef.current;
+}
+bottomSheetRef.current?.close();</code></pre>
+
+<h3 id="code-crash">4. Where it blows up</h3>
+
+<p>Closing the unit picker tells the provider to restore the sheet underneath. That calls <code>handleRestore</code>, which hands the stored number straight to <code>snapToIndex</code>.</p>
+
+<p class="filename">node_modules/@gorhom/bottom-sheet/src/components/bottomSheetModal/BottomSheetModal.tsx:302&ndash;306</p>
+<pre><code>if (!minimized.current || forcedDismissed.current) {
+  return;
+}
+minimized.current = false;
+bottomSheetRef.current?.snapToIndex(restoreIndexRef.current);</code></pre>
+
+<p>And <code>snapToIndex</code> range-checks its argument. With one detent, <code>detents.length - 1</code> is <code>0</code>.</p>
+
+<p class="filename">node_modules/@gorhom/bottom-sheet/src/components/bottomSheet/BottomSheet.tsx:1090&ndash;1095</p>
+<pre><code>invariant(
+  index &gt;= -1 &amp;&amp; index &lt;= detents.length - 1,
+  `'index' was provided but out of the provided snap points range! expected value to be between -1, ${
+    detents.length - 1
+  }`
+);</code></pre>
+
+<p>That is the message seen on the device: <em>'index' was provided but out of the provided snap points range! expected value to be between -1, 0</em>. An <code>invariant</code> throws. Nothing catches it, so the app goes down.</p>
+
+<div class="callout">
+  <span class="label">Edge case worth noting</span>
+  <p>Selecting a unit is not the only trigger. Tapping the dimmed backdrop closes the picker through the same path, and crashes the same way. The original report said "select any unit" because that is what a user would naturally do.</p>
+</div>
+
+<h3 id="code-fix1">5. Fix 1: do not minimize the sheet below</h3>
+
+<p>The first change is one prop on the picker's own sheet.</p>
+
+<p class="filename">src/components/forms/UnitPicker.tsx:122&ndash;126</p>
+<pre><code>&lt;BottomSheetModal
+  ref={sheetRef}
+  enableDynamicSizing
+  stackBehavior="push"</code></pre>
+
+<p>With <code>"push"</code>, the provider skips the <code>minimize()</code> call in step 3. The ingredient sheet stays where it is and the picker draws over it.</p>
+
+<p>The restore call still happens when the picker closes &mdash; the provider makes it regardless of stack behavior. But look again at the guard at the top of <code>handleRestore</code> in step 4: <code>if (!minimized.current ...) return;</code>. The sheet was never minimized, so <code>minimized.current</code> is still <code>false</code>, and the function returns before reaching <code>snapToIndex</code>. The bad number is never read.</p>
+
+<figure class="diagram">
+  <div class="ba">
+    <div class="ba-row">
+      <span class="rowlabel">switch</span>
+      <div class="flow">
+        <div class="node"><b>minimize()</b><span class="data">restoreIndex := 300.5</span></div>
+        <div class="arrow">&rarr;</div>
+        <div class="node"><b>restore()</b><span class="data">minimized = true</span></div>
+        <div class="arrow">&rarr;</div>
+        <div class="node bad"><b>snapToIndex</b><span class="data">throws</span></div>
+      </div>
+    </div>
+    <div class="ba-row after">
+      <span class="rowlabel">push</span>
+      <div class="flow">
+        <div class="node"><b>no minimize</b><span class="data">restoreIndex := -1</span></div>
+        <div class="arrow">&rarr;</div>
+        <div class="node hl"><b>restore()</b><span class="data">minimized = false</span></div>
+        <div class="arrow">&rarr;</div>
+        <div class="node hl"><b>early return</b><span class="data">never snaps</span></div>
+      </div>
+    </div>
+  </div>
+  <figcaption>The same restore call runs in both cases. Only one of them gets past the guard.</figcaption>
+</figure>
+
+<h3 id="code-fix2">6. Fix 2: close the keyboard</h3>
+
+<p>The second change closes the number pad when the picker opens.</p>
+
+<p class="filename">src/components/forms/UnitPicker.tsx:56&ndash;63</p>
+<pre><code>// The picker lives inside the ingredient sheet, whose quantity field opens a
+// number pad. That keyboard belongs to a TextInput in a sheet that stays
+// mounted, so nothing blurs it on its own: it would sit on top of the unit
+// list and hide every option.
+const openSheet = useCallback(() =&gt; {
+  Keyboard.dismiss();
+  sheetRef.current?.present();
+}, []);</code></pre>
+
+<p>Why does nothing else close it? Two reasons stack up. The scroll view uses <code>keyboardShouldPersistTaps="handled"</code>, so a tap on the Unit button does not blur the field. And the picker is not a native modal, it is a sibling view in the same tree, so opening it never moves focus. The field stays focused and the keyboard stays up.</p>
+
+<div class="callout">
+  <span class="label">Why both fixes, not just this one</span>
+  <p>It is tempting to think closing the keyboard is enough, since a closed keyboard means a valid index. It is not. <code>present()</code> defers its work to <code>requestAnimationFrame</code>, so the stack is evaluated on the <em>next frame</em>, around 16&nbsp;ms later. The keyboard takes roughly 250&nbsp;ms to animate away. The index is still <code>300.5</code> when <code>minimize()</code> reads it.</p>
+  <p>So <code>Keyboard.dismiss()</code> fixes what the user sees, and <code>stackBehavior="push"</code> fixes the crash. Neither covers for the other.</p>
+</div>
+
+<h3 id="code-i18n">7. The i18n pass, and the bug it uncovered</h3>
+
+<p>The project rule is that every user-facing string goes through <code>t()</code>, with a key in all three locale files. The three sheets the wizard opens had no <code>t()</code> calls at all. Everything in them shipped in English to Spanish and Brazilian Portuguese users.</p>
+
+<p>The second commit adds 19 keys per locale and routes the labels through them. Save and Delete reuse the existing <code>common.save</code> and <code>common.delete</code>.</p>
+
+<p>Unit chips are the interesting part. The picker used to build its own English labels.</p>
+
+<p class="filename">src/components/forms/UnitPicker.tsx &mdash; removed</p>
+<pre><code>function formatUnitLabel(unit: MeasurementUnit): string {
+  if (unit === 'to_taste') return 'To taste';
+  return unit.charAt(0).toUpperCase() + unit.slice(1);
+}</code></pre>
+
+<p>There was already a shared helper doing this properly, used by the shopping list and by ingredient rows. The picker now calls it instead, so a unit reads the same everywhere.</p>
+
+<p class="filename">src/features/recipes/unitConversion.ts:94&ndash;96</p>
+<pre><code>export function unitLabel(unit: MeasurementUnit): string {
+  return t(`shopping_list.units.${unit}`);
+}</code></pre>
+
+<p>Switching to it exposed a separate live bug. The <code>shopping_list.units</code> catalog had 15 entries, but <code>MeasurementUnit</code> has 16 values. <code>whole</code> was missing. The picker had been hiding that behind its own formatter, which happily produced "Whole" from the enum value. Every other caller of <code>unitLabel</code> &mdash; shopping list, ingredient rows, the nutrition basis sheet &mdash; was rendering a missing-key message for that unit. The key is now added in all three locales.</p>
+
+<div class="callout">
+  <span class="label">A visible side effect</span>
+  <p>Chips now read <code>g</code> and <code>to taste</code> instead of <code>G</code> and <code>To taste</code>. The title case came from capitalizing the enum value. Spanish and Portuguese do not title case units, so the shared catalog does not either.</p>
+</div>
+
+<h3 id="code-shadow">8. A rename that prevents a future bug</h3>
+
+<p>The third commit is two words. Both numeric fields named their callback argument <code>t</code>, which now shadows the <code>t</code> imported for translations in the same file.</p>
+
+<p class="filename">src/features/recipes/IngredientFormSheet.tsx:209</p>
+<pre><code><span class="del">- onChangeText={(t) =&gt; onChange((t ?? '').replace(/[^0-9]/g, ''))}</span>
+<span class="add">+ onChangeText={(text) =&gt; onChange((text ?? '').replace(/[^0-9]/g, ''))}</span></code></pre>
+
+<p>Nothing was broken. The shadow is a string and these call sites do not need the catalog. But the next person to add a label inside that callback would get <code>t is not a function</code> at runtime, with nothing in the diff to explain why. The same line exists in <code>StepFormSheet.tsx:232</code> and changed too.</p>
+
+<h3 id="code-tests">9. The tests</h3>
+
+<p>The crash lives in the library's animation layer, which Jest cannot run here: the project stubs out Reanimated. So the tests guard the <em>contract</em> instead &mdash; the two properties that, if either regressed, would bring the bug back.</p>
+
+<p class="filename">src/components/forms/__tests__/UnitPicker.test.tsx:65&ndash;75</p>
+<pre><code>it('stacks with "push" so the sheet underneath is never minimized', () =&gt; {
+  render(&lt;UnitPicker value={null} onChange={jest.fn()} /&gt;);
+
+  expect(mockSheetRender).toHaveBeenCalledWith(
+    expect.objectContaining({ stackBehavior: 'push' }),
+  );
+});</code></pre>
+
+<p><code>stackBehavior</code> renders nothing, so there is no DOM to assert on. The mock sheet reports the props it received to a <code>jest.fn()</code>, and the test inspects that call.</p>
+
+<div class="callout">
+  <span class="label">The gate was proven, not assumed</span>
+  <p>A regression test only counts as evidence if it fails on the broken code. Both fixes were removed, the suite was run, and the two guard tests failed. The fixes were restored and they passed again. The rest of the suite is 167 files and 1517 tests, all passing.</p>
+</div>
+
+<h2 id="quiz">Check your understanding</h2>
+<p>Five questions on the parts that matter. Options are shuffled each time the page loads.</p>
+<div id="quiz"></div>
+
+<p>These five cover the crash itself. Three areas are not covered here: the
+localisation pass, the rename in the shared schema, and the tests. Ask if you want
+questions on any of those.</p>
+
+<h2 id="open">Open questions</h2>
+
+<p><strong>The library fault is still there, and it is known upstream.</strong> This PR routes around the fault; it does not fix it. Any future sheet opened over a form sheet that holds a keyboard can hit the same invariant. The rule is in <code>docs/AI_CORE_CONTEXT.md</code> so the next person finds it, but nothing enforces it mechanically.</p>
+
+<p>An earlier version of this section said nothing had been filed upstream. That was not checked, and it was wrong. Two issues carry this exact error message, both reporting a bottom sheet opened inside another bottom sheet:</p>
+
+<ul>
+  <li><strong>gorhom/react-native-bottom-sheet#2648</strong> &mdash; closed automatically by a bot for not following the issue template.</li>
+  <li><strong>gorhom/react-native-bottom-sheet#2649</strong> &mdash; closed automatically as stale after 30 days with no reply.</li>
+</ul>
+
+<p>Neither was triaged by a maintainer. A later comment on #2649, from a user on the same version this app uses, gives a production stack trace that matches the path traced in this document line for line, ending at <code>BottomSheetModal.tsx:306</code>.</p>
+
+<div class="callout">
+  <span class="label">Two routes, one broken line</span>
+  <p>That reporter blames a different cause: a sheet whose detents shrank from two to one while another modal sat on top. This app's trigger is the keyboard instead. Both end at the same line, because <code>restoreIndexRef</code> is captured at minimize time and never re-checked against the detents that exist at restore time. That is why <code>stackBehavior="push"</code> is the right fix rather than sanitizing the number: it removes the restore path instead of guarding one way of poisoning it.</p>
+  <p>The stack trace is corroboration, not authority. It is a comment from a stranger, and their causal explanation is theirs, not something verified here.</p>
+</div>
+
+<p><strong>The sheet stays at keyboard height.</strong> After the keyboard closes, the ingredient sheet keeps its lifted height instead of settling back to fit its content. That is pre-existing &mdash; it reproduces with the picker entirely out of the picture &mdash; and it is the deliberate cost of an earlier commit dropping <code>keyboardBlurBehavior="restore"</code>. The obvious fix is the exact setting that caused the earlier crash, so it was left for its own change.</p>
+
+<p><strong>Validation messages: fixed, after this page first said otherwise.</strong> An earlier version of this section said the Zod messages were left in English because fixing them needed a new app-wide pattern. That was wrong twice over, and a fourth commit fixes them.</p>
+
+<p>It was wrong because the codebase already called <code>t()</code> inside schemas &mdash; <code>src/features/auth/schemas.ts</code> and <code>src/schemas/common.ts</code> had done so from the start &mdash; so plain English in the recipe schemas was an omission, not consistency. And because this project is on Zod 4, where the <code>error</code> option accepts a function that runs at validation time, so nothing had to be invented.</p>
+
+<p>The half that was true is sharper than it looked. An eager <code>t()</code> in a schema is itself a bug, and <code>auth/schemas.ts</code> had it. Schemas are module-level constants, evaluated once on import, so the message freezes at whatever locale was active then. <code>src/features/preferences/useApplyPreferredLocale.ts:21</code> assigns <code>i18n.locale</code> long after import, when the user picks a language in preferences. The frozen message does not follow. Every message now takes the lazy form:</p>
+
+<p class="filename">src/features/recipes/schemas.ts:160&ndash;162</p>
+<pre><code>ingredientName: z
+  .string()
+  .min(1, { error: () =&gt; t('errors.ingredient_name_required') }),</code></pre>
+
+<p><code>src/lib/env.ts</code> keeps its English messages on purpose. Those validate environment variables at startup and are read by whoever runs the build, never by a user.</p>
+
+<p><strong>Only English was checked on a device.</strong> The Spanish and Brazilian Portuguese strings were written for this PR and are enforced for key parity by <code>pnpm i18n:check</code>, but nobody has run the app in those locales to see the sheets. Wording and truncation are unverified.</p>
+
+<script>
+const QUIZ = [
+  {
+    stem: "A user edits an ingredient, taps Quantity, then taps Unit. What did they see before this change?",
+    options: [
+      { text: "The unit list hidden behind the number pad, which never closed", correct: true,
+        why: "Right. The scroll view uses keyboardShouldPersistTaps set to handled, and the picker is a sibling view rather than a native modal, so the quantity field keeps focus and the pad stays up." },
+      { text: "The unit list on top, with the number pad closing first", correct: false,
+        why: "That is the behavior after this change, and only because Keyboard.dismiss() was added. Nothing closed the pad on its own before." },
+      { text: "The ingredient sheet closing, losing every edit made so far", correct: false,
+        why: "The sheet was minimized, not dismissed, so form state survived. Losing the edits would have been a different and more obvious bug." },
+      { text: "An empty unit list, because the sheet mounted before its data", correct: false,
+        why: "The unit list is a fixed array in the component, not fetched, so it is always fully populated at mount." }
+    ]
+  },
+  {
+    stem: "While the keyboard is open, what does the sheet library report as the ingredient sheet's current index?",
+    options: [
+      { text: "A position measured in points, such as 300.5", correct: true,
+        why: "Right. The keyboard-lifted position is not in the detents array, so the lookup fails and the fallback assigns highestDetentPosition, which is a position rather than an index." },
+      { text: "The highest valid detent index, which is 0 here", correct: false,
+        why: "That is what the comment above the fallback promises, and what the code should do. The code assigns a position instead, which is the whole fault." },
+      { text: "Negative one, the value that means the sheet is closed", correct: false,
+        why: "It starts at -1 when the lookup misses, but the fallback immediately overwrites it because the keyboard is shown and the sheet is not closed." },
+      { text: "The number of detents, so one past the last index", correct: false,
+        why: "An off-by-one would be far less damaging, since it is still a small integer. The reported value is a layout coordinate, often in the hundreds." }
+    ]
+  },
+  {
+    stem: "Why is calling Keyboard.dismiss() not enough on its own to stop the crash?",
+    options: [
+      { text: "present() mounts on the next frame, before the keyboard leaves", correct: true,
+        why: "Right. present() defers to requestAnimationFrame, about 16 ms, while the keyboard animates away over roughly 250 ms. The stale index is still stored when minimize() reads it." },
+      { text: "Keyboard.dismiss() cannot blur a BottomSheetTextInput that a sheet holds", correct: false,
+        why: "It can, and it does. That is exactly why the unit list is visible after the change. The problem is timing, not whether it works." },
+      { text: "The ingredient sheet ignores keyboard events while it stays minimized", correct: false,
+        why: "Minimizing happens after the keyboard call, not before, so there is no window in which the sheet is minimized and still listening." },
+      { text: "Dismissing the keyboard rebuilds the sheet with no detents left", correct: false,
+        why: "An empty detents array would actually be safe here, because snapToIndex returns early when there are no detents to snap to." }
+    ]
+  },
+  {
+    stem: "Switching the picker to the shared unitLabel() helper exposed a bug elsewhere in the app. Which one?",
+    options: [
+      { text: "The unit 'whole' had no entry in the shared catalog", correct: true,
+        why: "Right. MeasurementUnit has 16 values and the catalog had 15. The picker's own formatter hid it, but shopping list, ingredient rows and the nutrition sheet showed a missing-key message." },
+      { text: "The unit 'to_taste' rendered with an underscore in every locale", correct: false,
+        why: "That one was already handled. Both the old formatter and the catalog give it a proper two-word label in each language." },
+      { text: "Unit labels were title-cased in Spanish, where that is wrong", correct: false,
+        why: "True of the picker before this change, and a real reason to drop its formatter. But it is a display choice, not the separate live bug the switch uncovered." },
+      { text: "The shopping list and the picker used different unit enums", correct: false,
+        why: "Both have always used the same MeasurementUnit type. They differed in how they turned a value into text, not in the set of values." }
+    ]
+  },
+  {
+    stem: "Someone later removes stackBehavior from the picker but keeps Keyboard.dismiss(). What comes back?",
+    options: [
+      { text: "The crash, because the sheet below is minimized and restored", correct: true,
+        why: "Right. Without push, the provider calls minimize(), which stores the stale index, and the restore on close hands it to snapToIndex. The keyboard call is too late to prevent that." },
+      { text: "The hidden unit list, because the number pad stays open", correct: false,
+        why: "That symptom is owned by Keyboard.dismiss(), which is still there. The list stays visible, which makes the regression harder to spot." },
+      { text: "Nothing, since dismissing the keyboard clears the stale stored index", correct: false,
+        why: "This is the tempting answer and the reason both fixes exist. The keyboard takes about 250 ms to leave, and the stack is evaluated on the next frame." },
+      { text: "A second backdrop, because both sheets now dim the screen", correct: false,
+        why: "Backdrops behave the other way round. Under push both sheets stay mounted, so removing it means fewer visible layers, not more." }
+    ]
+  }
+];
+
+(function () {
+  var root = document.getElementById("quiz");
+  if (!root) return;
+  var answered = 0, right = 0;
+
+  function shuffle(arr) {
+    var a = arr.slice();
+    for (var i = a.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var t = a[i]; a[i] = a[j]; a[j] = t;
+    }
+    return a;
+  }
+
+  var scoreEl = document.createElement("div");
+  scoreEl.className = "score";
+  scoreEl.hidden = true;
+
+  var lastGroup = null;
+
+  QUIZ.forEach(function (q, qi) {
+    if (q.group && q.group !== lastGroup) {
+      var h = document.createElement("h3");
+      h.textContent = q.group;
+      root.appendChild(h);
+      lastGroup = q.group;
+    }
+
+    var box = document.createElement("div");
+    box.className = "quiz-q";
+
+    var stem = document.createElement("p");
+    stem.className = "stem";
+    var num = document.createElement("span");
+    num.className = "num";
+    num.textContent = (qi + 1) + ". ";
+    stem.appendChild(num);
+    stem.appendChild(document.createTextNode(q.stem));
+    box.appendChild(stem);
+
+    var list = document.createElement("div");
+    list.className = "opts";
+    var buttons = [];
+
+    shuffle(q.options).forEach(function (opt) {
+      var btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "opt";
+      btn.textContent = opt.text;
+
+      var why = document.createElement("p");
+      why.className = "why " + (opt.correct ? "ok" : "no");
+      why.hidden = true;
+      var mark = document.createElement("span");
+      mark.className = "mark " + (opt.correct ? "ok" : "no");
+      mark.textContent = opt.correct ? "Correct." : "Not this one.";
+      why.appendChild(mark);
+      why.appendChild(document.createTextNode(opt.why));
+
+      btn.addEventListener("click", function () {
+        if (box.dataset.done) return;
+        box.dataset.done = "1";
+        answered++;
+        if (opt.correct) right++;
+        btn.classList.add(opt.correct ? "picked-ok" : "picked-no");
+        buttons.forEach(function (b) {
+          b.el.disabled = true;
+          if (b.opt.correct) b.el.classList.add("reveal-ok");
+          if (b.opt === opt || b.opt.correct) b.why.hidden = false;
+        });
+        scoreEl.hidden = false;
+        scoreEl.textContent = right + " of " + answered + " answered correctly"
+          + (answered === QUIZ.length ? "." : " so far.");
+      });
+
+      buttons.push({ el: btn, why: why, opt: opt });
+      list.appendChild(btn);
+      list.appendChild(why);
+    });
+
+    box.appendChild(list);
+    root.appendChild(box);
+  });
+
+  root.appendChild(scoreEl);
+})();
+</script>
+</body>
+</html>
