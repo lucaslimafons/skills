@@ -143,10 +143,16 @@ of coverage, and one pass through it covers one idea properly:
 The counterfactual is usually the best question in the set. It cannot be answered
 by recall.
 
-**Scaling.** One pass through the ladder is the whole quiz for a focused change.
-For one spanning several subsystems, run the ladder once per major area rather
-than stretching five questions across all of them: ten or twelve across four
-groups is a reasonable shape for a large PR.
+**Scaling.** One pass through the ladder is the whole quiz. Five is the default
+and eight is the ceiling, so a change spanning several subsystems does not get a
+ladder pass per area: it gets one pass aimed at the spine, plus a closing note
+naming the areas left unquizzed.
+
+This is a deliberate reversal. An earlier version said ten or twelve questions
+across four groups was a reasonable shape for a large PR, and the result was 11
+questions on a six-file change — a third of the page and nine minutes of reading,
+because "one question per distinct idea" has no ceiling when the author also
+decides what counts as an idea. The reader came for the explanation.
 
 ## Worked example
 

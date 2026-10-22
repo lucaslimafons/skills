@@ -79,9 +79,16 @@ name; the filename is the only index this directory has):
 mkdir -p ~/explanations   # ~/explanations/2026-10-21-explanation-pr-225.html
 ```
 
-Write with the clarity and flow of Martin Kleppmann, smooth transitions, classic
-style. Where that pulls against the phone, the phone wins: break on each move in
-the argument. Callouts for key concepts and edge cases.
+Write for a reader whose first language is not English. Short sentences, one idea
+each, under 20 words where you can. Plain words over elegant ones, and no idioms
+or metaphors: "the old behavior" travels, "the whole ballgame" does not. Keep
+Kleppmann's habit of naming the mechanism and ordering the argument so it builds,
+and drop the long elegant sentence. Break on each move in the argument.
+
+**Define a term the first time you use it**, in the same sentence: "a distractor
+(a wrong option)", "a tell (a pattern that gives the answer away)". A reader can
+follow every sentence and still be lost in the vocabulary, and that is the failure
+this prevents. Callouts for key concepts and edge cases.
 
 Diagrams: **always include example data** — `join_code=A4F2, via=ticket` explains,
 a box labelled "Server" decorates. The template scaffolds four families: `.flow`
@@ -109,10 +116,18 @@ example. What matters most:
   order carries no information and you must never refer to an option by letter or
   position.
 
-Count follows coverage: one question per distinct idea, so three to five for a
-focused change and ten or twelve across several subsystems. Never invent one to
-reach a number — a single trivia question teaches the reader the quiz is
-decoration. Past about six, give each a `group` naming its area.
+**Five questions**, one pass through the ladder in `references/quiz-design.md` —
+it has five rungs for that reason. Write fewer when the change holds fewer ideas,
+and never invent one to reach five: a trivia question teaches the reader the quiz
+is decoration.
+
+Go past five only for a change spanning genuinely separate subsystems, and never
+past eight. Each extra question lowers the odds that any of them get answered, and
+a quiz nobody finishes teaches nothing — it is a check on the reading, not a
+second document. Past six, give each a `group` naming its area.
+
+Then close the section by naming the two or three areas you did not quiz. The
+reader can ask for those, which beats you guessing which ones they wanted.
 
 ## Security: it is a document, so keep it inert
 

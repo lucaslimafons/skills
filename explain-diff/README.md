@@ -78,10 +78,16 @@ filler. A distractor grown from a plausible misreading comes out naturally as lo
 and as concrete as the key, which fixes the length tell more durably than any word
 limit does.
 
-**Question count follows coverage, not a fixed five.** One question per distinct
-idea: three to five for a focused change, ten or twelve across several subsystems.
-A change spanning four subsystems has more than five ideas in it, and padding to a
-quota teaches the reader the quiz is decoration.
+**Five questions by default, eight at the most.** One pass through the five-rung
+ladder, which is the unit of coverage. Writing fewer is fine when the change holds
+fewer ideas, and padding to a quota teaches the reader the quiz is decoration.
+
+The cap exists because the opposite rule was tried first and failed. "One question
+per distinct idea" sounds right but has no ceiling, since the author also decides
+what counts as an idea: it produced 11 questions on a six-file change, which was a
+third of the page and nine minutes of reading. So the explainer now closes the quiz
+by naming the areas it did not cover, and the reader asks for more if they want
+them.
 
 ## The generated page is a document, so it stays inert
 
@@ -154,6 +160,12 @@ point is a durable artifact.
 [Geoffrey Litt](https://github.com/geoffreylitt) wrote the original
 [`explain-diff-html`](https://gist.github.com/geoffreylitt/a29df1b5f9865506e8952488eac3d524),
 and the good parts of this are his: the section structure, the single-file HTML
-artifact, the insistence on diagrams with real data, and the prose instruction to
-write like Martin Kleppmann. This version adds the quiz fixes, the security posture,
-a target-resolution ladder and the bundled template and verifier.
+artifact, the insistence on diagrams that carry real data, and the instruction to
+name the mechanism rather than gesture at it.
+
+This version adds the quiz fixes, the security posture, a target-resolution ladder,
+and the bundled template and verifier. It also departs from the original on prose
+style: his instruction is to write with the flow of Martin Kleppmann in classic
+style, which is excellent and aimed at a native English reader. These explainers
+get read across a team, so the target here is short sentences, plain words and
+jargon defined on first use.
